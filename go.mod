@@ -6,6 +6,7 @@ require (
 	git.archive.org/wb/gocrawlhq v1.2.5
 	github.com/gin-gonic/gin v1.10.0
 	github.com/gorilla/websocket v1.5.3
+	github.com/jellydator/ttlcache/v3 v3.3.0
 	go.mongodb.org/mongo-driver v1.16.1
 )
 
