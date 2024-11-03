@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strings"
 
-	"git.archive.org/wb/gocrawlhq"
 	"github.com/gin-gonic/gin"
+	"github.com/internetarchive/gocrawlhq"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"git.archive.org/wb/gocrawlhq"
 	"github.com/gin-gonic/gin"
+	"github.com/internetarchive/gocrawlhq"
 )
 
 func discoveredHandler(c *gin.Context) {

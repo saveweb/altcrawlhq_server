@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"time"
 
-	"git.archive.org/wb/gocrawlhq"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
+	"github.com/internetarchive/gocrawlhq"
 	"github.com/jellydator/ttlcache/v3"
 )
 
