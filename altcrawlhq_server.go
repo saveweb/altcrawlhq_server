@@ -12,30 +12,15 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func isAuthorized(c *gin.Context) bool {
-	authKey := c.GetHeader("X-Auth-Key")
-	authSecret := c.GetHeader("X-Auth-Secret")
-	// identifier := c.GetHeader("X-Identifier")
-
-	if authKey == "" || authSecret == "" {
-		return false
-	}
-
-	if authKey == "saveweb_key" && authSecret == "saveweb_sec" {
-		return true
-	}
-
-	return false
-}
-
 type FeedRequest struct {
 	Size     int    `json:"size"`
 	Strategy string `json:"strategy"`
 }
 
 var MONGODB_URI string = os.Getenv("MONGODB_URI")
-
 var mongoDatabase *mongo.Database
+
+const MONGODB_DB string = "crawlhq"
 
 func connect_to_mongodb() {
 	fmt.Println("Connecting to MongoDB...")
@@ -55,7 +40,7 @@ func connect_to_mongodb() {
 	}
 	fmt.Println("Connected to MongoDB!")
 
-	db := client.Database("crawlhq")
+	db := client.Database(MONGODB_DB)
 	mongoDatabase = db
 }
 
@@ -65,11 +50,6 @@ func init() {
 
 func ServeHTTP() {
 	g := gin.New()
-	// g.Use(gin.Recovery())
-	// err := g.SetTrustedProxies(nil)
-	// if err != nil {
-	// 	panic(err)
-	// }
 	g.GET("/", func(c *gin.Context) {
 		time.Sleep(1 * time.Second)
 		c.JSON(http.StatusNotFound, gin.H{
@@ -79,11 +59,14 @@ func ServeHTTP() {
 
 	apiGroup := g.Group("/api")
 	{
-		projectGroup := apiGroup.Group("/project/:project/")
+		projectsGroup := apiGroup.Group("/projects/:project/")
 		{
-			projectGroup.GET("/feed", feedHandler)
-			projectGroup.POST("/finished", finishHandler)
-			projectGroup.POST("/discovered", discoveredHandler)
+			projectsGroup.POST("/urls", addHandler)
+			projectsGroup.GET("/urls", feedHandler)
+			projectsGroup.DELETE("/urls", finishHandler)
+
+			projectsGroup.POST("/seencheck", seencheckHandler)
+			projectsGroup.POST("/reset", resetHandler)
 		}
 		apiGroup.GET("/ws", websocketHandler)
 		apiGroup.GET("/online", onlineClientsHandler)

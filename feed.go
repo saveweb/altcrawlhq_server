@@ -17,11 +17,12 @@ import (
 
 // mongodb record
 type URLRecord struct {
-	ID     primitive.ObjectID `json:"id" bson:"_id"`
-	URL    string             `json:"url" bson:"url"`
-	Hop    int                `json:"hop" bson:"hop"`
-	Via    string             `json:"via" bson:"via"`
-	Status string             `json:"status" bson:"status"`
+	gocrawlhq.URL
+	ID primitive.ObjectID `json:"id" bson:"_id"`
+	// URL    string             `json:"url" bson:"url"`
+	Hop    int    `json:"hop" bson:"hop"`
+	Via    string `json:"via" bson:"via"`
+	Status string `json:"status" bson:"status"`
 }
 
 type feedRequest struct {
