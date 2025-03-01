@@ -67,6 +67,7 @@ func websocketHandler(c *gin.Context) {
 	for {
 		wsMsgType, wsMsg, err := ws.ReadMessage()
 		if err != nil {
+			// client disconnected
 			return
 		}
 		fmt.Printf("Message Type: %d, Message: %s\n", wsMsgType, string(wsMsg))

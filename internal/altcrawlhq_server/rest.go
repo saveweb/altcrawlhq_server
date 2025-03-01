@@ -40,10 +40,9 @@ func resetHandler(c *gin.Context) {
 
 	err = tx.Commit()
 
-	if err != nil {
+	if err == nil {
 		c.JSON(http.StatusOK, gin.H{"message": "Reset"})
 	} else {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
-
 }

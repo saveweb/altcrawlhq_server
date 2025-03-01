@@ -54,7 +54,8 @@ func addHandler(c *gin.Context) {
 		}
 	}
 
-	if tx.Commit() == nil {
+	err = tx.Commit()
+	if err == nil {
 		c.JSON(http.StatusCreated, gin.H{
 			"message":           "Added",
 			"InsertedURLsCount": len(addPayload.URLs),

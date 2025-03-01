@@ -49,13 +49,13 @@ func deleteHandler(c *gin.Context) {
 
 	err = tx.Commit()
 
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-	} else {
+	if err == nil {
 		statusAdd(project, finishedPayload.LocalCrawls)
 		c.JSON(http.StatusNoContent, gin.H{
 			"message":      "Deleted",
 			"DeletedCount": len(finishedPayload.URLs),
 		})
+	} else {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
 }
