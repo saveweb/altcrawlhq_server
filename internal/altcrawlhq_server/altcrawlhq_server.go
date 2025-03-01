@@ -2,7 +2,7 @@ package altcrawlhqserver
 
 import (
 	_ "embed"
-	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"runtime"
@@ -38,7 +38,7 @@ func init() {
 	dbWrite.Exec("PRAGMA journal_mode=WAL")
 
 	if _, err := dbWrite.Exec(ddl); err != nil {
-		fmt.Println(err)
+		slog.Error("Failed to create schema", "error", err.Error()) // ignore this
 	}
 
 	dbReadSqlc = sqlc_model.New(dbRead)
