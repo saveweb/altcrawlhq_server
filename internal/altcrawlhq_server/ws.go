@@ -18,7 +18,6 @@ var onlineClientsStats = ttlcache.New[string, gocrawlhq.IdentifyMessage](
 )
 
 func init() {
-	fmt.Println("Initializing onlineClientsStats...")
 	go onlineClientsStats.Start()
 	fmt.Println("Initialized onlineClientsStats!")
 }
@@ -68,7 +67,7 @@ func websocketHandler(c *gin.Context) {
 	for {
 		wsMsgType, wsMsg, err := ws.ReadMessage()
 		if err != nil {
-			panic(err)
+			return
 		}
 		fmt.Printf("Message Type: %d, Message: %s\n", wsMsgType, string(wsMsg))
 

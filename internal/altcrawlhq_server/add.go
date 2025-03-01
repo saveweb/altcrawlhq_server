@@ -7,7 +7,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/internetarchive/gocrawlhq"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func addHandler(c *gin.Context) {
@@ -24,22 +23,45 @@ func addHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	// TODO: seencheck
+	if addPayload.BypassSeencheck {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "bypassSeencheck is not implemented yet"})
+		return
+	}
+
 	fmt.Printf("Discovered: %v\n", addPayload)
 
-	collection := mongoDatabase.Collection(project)
-
-	opts := options.InsertMany().SetOrdered(false)
 	urls := make([]interface{}, len(addPayload.URLs))
 	for i, url := range addPayload.URLs {
 		urls[i] = url
 	}
-	result, err := collection.InsertMany(context.TODO(), urls, opts)
 
-	if addPayload.BypassSeencheck {
+	ctx := context.TODO()
+	tx, err := dbWrite.BeginTx(ctx, nil)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "Failed to start transaction"})
+		return
+	}
+	defer tx.Rollback()
+	qtx := dbWriteSqlc.WithTx(tx)
 
+	for _, url := range addPayload.URLs {
+		_, err := qtx.CreateURL(ctx, ToCreateURLParams(URL2SqlcURL(&url, project)))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"message": "Added"})
+	if tx.Commit() == nil {
+		c.JSON(http.StatusCreated, gin.H{
+			"message":           "Added",
+			"InsertedURLsCount": len(addPayload.URLs),
+		})
+	} else {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to commit transaction"})
+	}
 }
 
 // func inspectSeencheck(collection *mongo.Collection, URLs []gocrawlhq.URL, URLType string) ([]gocrawlhq.URL, error) {

@@ -1,0 +1,24 @@
+CREATE TABLE urls (
+    project TEXT NOT NULL,
+    id TEXT NOT NULL,
+    value TEXT NOT NULL,
+    via TEXT DEFAULT '' NOT NULL,
+    host TEXT DEFAULT '' NOT NULL,
+    path TEXT DEFAULT '' NOT NULL,
+    type TEXT NOT NULL CHECK (type IN ('seed', 'asset')),
+    crawler TEXT DEFAULT '' NOT NULL,
+    status TEXT NOT NULL DEFAULT 'FRESH' CHECK (status IN ('FRESH', 'CLAIMED', 'DONE')),
+    lift_off INTEGER NOT NULL DEFAULT 0,
+    timestamp INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+    PRIMARY KEY (project, id)
+);
+CREATE INDEX urls_project_value ON urls (project, type, value);
+
+
+-- seens is for assets only
+CREATE TABLE seens (
+    project TEXT NOT NULL,
+    type TEXT NOT NULL,
+    value TEXT NOT NULL,
+    PRIMARY KEY (project, type, value)
+);

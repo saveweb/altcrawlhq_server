@@ -1,0 +1,9 @@
+version: "2"
+sql:
+  - engine: "sqlite"
+    queries: "internal/altcrawlhq_server/query.sql"
+    schema: "internal/altcrawlhq_server/schema.sql"
+    gen:
+      go:
+        package: "sqlc_model"
+        out: "internal/sqlc_model"
