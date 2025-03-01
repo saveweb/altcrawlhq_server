@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"fmt"
 	"net/http"
+	"os"
 	"runtime"
 	"time"
 
@@ -27,6 +28,8 @@ var dbReadSqlc, dbWriteSqlc *sqlc_model.Queries
 var ddl string
 
 func init() {
+	os.MkdirAll("data", 0755)
+
 	dbRead, _ = sql.Open("sqlite3", "file:data/hq.db")
 	dbRead.SetMaxOpenConns(runtime.NumCPU())
 
