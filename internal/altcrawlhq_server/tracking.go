@@ -23,6 +23,7 @@ func statusAdd(key string, value int) {
 
 func maintainTrackingStatus() {
 	slog.Info("Starting tracking status maintenance")
+	os.MkdirAll(path.Join("data", "status"), 0755)
 
 	for {
 		time.Sleep(10 * time.Second)
