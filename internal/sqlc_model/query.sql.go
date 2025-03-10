@@ -21,6 +21,7 @@ type ClaimThisURLParams struct {
 	ID      string
 }
 
+// index: PRIMARY KEY
 func (q *Queries) ClaimThisURL(ctx context.Context, arg ClaimThisURLParams) error {
 	_, err := q.db.ExecContext(ctx, claimThisURL, arg.Project, arg.ID)
 	return err
@@ -37,6 +38,7 @@ type CountSeenParams struct {
 	Value   string
 }
 
+// index: PRIMARY KEY
 func (q *Queries) CountSeen(ctx context.Context, arg CountSeenParams) (int64, error) {
 	row := q.db.QueryRowContext(ctx, countSeen, arg.Project, arg.Type, arg.Value)
 	var count int64
@@ -60,10 +62,9 @@ func (q *Queries) CreateSeen(ctx context.Context, arg CreateSeenParams) error {
 	return err
 }
 
-const createURL = `-- name: CreateURL :one
+const createURL = `-- name: CreateURL :exec
 INSERT INTO urls (project, id, value, via, host, path, type, crawler, status, lift_off, timestamp)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-RETURNING project, id, value, via, host, path, type, crawler, status, lift_off, timestamp
 `
 
 type CreateURLParams struct {
@@ -80,8 +81,8 @@ type CreateURLParams struct {
 	Timestamp int64
 }
 
-func (q *Queries) CreateURL(ctx context.Context, arg CreateURLParams) (Url, error) {
-	row := q.db.QueryRowContext(ctx, createURL,
+func (q *Queries) CreateURL(ctx context.Context, arg CreateURLParams) error {
+	_, err := q.db.ExecContext(ctx, createURL,
 		arg.Project,
 		arg.ID,
 		arg.Value,
@@ -94,21 +95,7 @@ func (q *Queries) CreateURL(ctx context.Context, arg CreateURLParams) (Url, erro
 		arg.LiftOff,
 		arg.Timestamp,
 	)
-	var i Url
-	err := row.Scan(
-		&i.Project,
-		&i.ID,
-		&i.Value,
-		&i.Via,
-		&i.Host,
-		&i.Path,
-		&i.Type,
-		&i.Crawler,
-		&i.Status,
-		&i.LiftOff,
-		&i.Timestamp,
-	)
-	return i, err
+	return err
 }
 
 const doneURL = `-- name: DoneURL :exec
@@ -122,15 +109,16 @@ type DoneURLParams struct {
 	ID      string
 }
 
+// index: PRIMARY KEY
 func (q *Queries) DoneURL(ctx context.Context, arg DoneURLParams) error {
 	_, err := q.db.ExecContext(ctx, doneURL, arg.Project, arg.ID)
 	return err
 }
 
 const getFreshURLs = `-- name: GetFreshURLs :many
+
 SELECT project, id, value, via, host, path, type, crawler, status, lift_off, timestamp FROM urls
 WHERE project = ? AND status = 'FRESH'
-ORDER BY lift_off ASC
 LIMIT ?
 `
 
@@ -139,6 +127,10 @@ type GetFreshURLsParams struct {
 	Limit   int64
 }
 
+// -- name: GetURL :one
+// SELECT * FROM urls
+// WHERE project = ? AND id = ? LIMIT 1;
+// index: urls_project_status
 func (q *Queries) GetFreshURLs(ctx context.Context, arg GetFreshURLsParams) ([]Url, error) {
 	rows, err := q.db.QueryContext(ctx, getFreshURLs, arg.Project, arg.Limit)
 	if err != nil {
@@ -174,33 +166,21 @@ func (q *Queries) GetFreshURLs(ctx context.Context, arg GetFreshURLsParams) ([]U
 	return items, nil
 }
 
-const getURL = `-- name: GetURL :one
-SELECT project, id, value, via, host, path, type, crawler, status, lift_off, timestamp FROM urls
-WHERE project = ? AND id = ? LIMIT 1
+const refreshSeen = `-- name: RefreshSeen :exec
+UPDATE seens
+SET timestamp = strftime('%s', 'now')
+WHERE project = ? AND type = ? AND value = ?
 `
 
-type GetURLParams struct {
+type RefreshSeenParams struct {
 	Project string
-	ID      string
+	Type    string
+	Value   string
 }
 
-func (q *Queries) GetURL(ctx context.Context, arg GetURLParams) (Url, error) {
-	row := q.db.QueryRowContext(ctx, getURL, arg.Project, arg.ID)
-	var i Url
-	err := row.Scan(
-		&i.Project,
-		&i.ID,
-		&i.Value,
-		&i.Via,
-		&i.Host,
-		&i.Path,
-		&i.Type,
-		&i.Crawler,
-		&i.Status,
-		&i.LiftOff,
-		&i.Timestamp,
-	)
-	return i, err
+func (q *Queries) RefreshSeen(ctx context.Context, arg RefreshSeenParams) error {
+	_, err := q.db.ExecContext(ctx, refreshSeen, arg.Project, arg.Type, arg.Value)
+	return err
 }
 
 const resetURL = `-- name: ResetURL :exec
@@ -214,6 +194,7 @@ type ResetURLParams struct {
 	ID      string
 }
 
+// index: PRIMARY KEY
 func (q *Queries) ResetURL(ctx context.Context, arg ResetURLParams) error {
 	_, err := q.db.ExecContext(ctx, resetURL, arg.Project, arg.ID)
 	return err

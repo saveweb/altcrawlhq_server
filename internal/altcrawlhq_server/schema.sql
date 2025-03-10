@@ -1,4 +1,4 @@
-CREATE TABLE urls (
+CREATE TABLE IF NOT EXISTS urls (
     project TEXT NOT NULL,
     id TEXT NOT NULL,
     value TEXT NOT NULL,
@@ -12,13 +12,15 @@ CREATE TABLE urls (
     timestamp INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
     PRIMARY KEY (project, id)
 );
-CREATE INDEX urls_project_value ON urls (project, type, value);
+CREATE UNIQUE INDEX IF NOT EXISTS urls_project_value ON urls (project, type, value); -- for deduplication
+CREATE INDEX IF NOT EXISTS urls_project_status ON urls (project, status); -- for queue
 
 
 -- seens is for assets only
-CREATE TABLE seens (
+CREATE TABLE IF NOT EXISTS seens (
     project TEXT NOT NULL,
     type TEXT NOT NULL,
     value TEXT NOT NULL,
+    timestamp INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
     PRIMARY KEY (project, type, value)
 );

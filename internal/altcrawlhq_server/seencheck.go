@@ -56,6 +56,16 @@ func seencheckHandler(c *gin.Context) {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "Failed to create seen record", "url": url})
 				return
 			}
+		} else {
+			err := qtx.RefreshSeen(ctx, sqlc_model.RefreshSeenParams{
+				Project: project,
+				Type:    url.Type,
+				Value:   url.Value,
+			})
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "Failed to refresh seen record", "url": url})
+				return
+			}
 		}
 	}
 

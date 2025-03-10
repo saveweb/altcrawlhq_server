@@ -5,9 +5,10 @@
 package sqlc_model
 
 type Seen struct {
-	Project string
-	Type    string
-	Value   string
+	Project   string
+	Type      string
+	Value     string
+	Timestamp int64
 }
 
 type Url struct {

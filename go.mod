@@ -4,6 +4,7 @@ go 1.24.0
 
 require (
 	github.com/gin-gonic/gin v1.10.0
+	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/internetarchive/gocrawlhq v1.2.28
 	github.com/jellydator/ttlcache/v3 v3.3.0

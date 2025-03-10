@@ -67,6 +67,11 @@ func getHandler(c *gin.Context) {
 		Project: project,
 		Limit:   int64(request.Size),
 	})
+	if err != nil {
+		slog.Error("Failed to get fresh URLs", "error", err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "Failed to get fresh URLs"})
+		return
+	}
 
 	URLs := []gocrawlhq.URL{}
 	for _, record := range sqlcUrls {
@@ -88,7 +93,7 @@ func getHandler(c *gin.Context) {
 			c.JSON(http.StatusNoContent, gin.H{"message": "No URLs"})
 			return
 		} else {
-			slog.Info("Feed", "project", project, "urls", URLs)
+			slog.Info("Feed", "project", project, "urlsCount", len(URLs))
 			c.JSON(http.StatusOK, URLs)
 			return
 		}

@@ -2,7 +2,6 @@ package altcrawlhqserver
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -23,10 +22,6 @@ func deleteHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
-	fmt.Printf("Finished: %v\n", finishedPayload)
-
-	// finishedPayload.URLs
 
 	ctx := context.TODO()
 	tx, err := dbWrite.Begin()
