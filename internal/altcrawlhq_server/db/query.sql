@@ -25,6 +25,11 @@ UPDATE urls
 SET status = 'DONE', timestamp = strftime('%s', 'now')
 WHERE project = ? AND id = ?;
 
+-- index: PRIMARY KEY
+-- name: DeleteURL :exec
+DELETE FROM urls
+WHERE project = ? AND id = ?;
+
 
 -- index: PRIMARY KEY
 -- name: ResetURL :exec

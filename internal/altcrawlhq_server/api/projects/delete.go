@@ -1,4 +1,4 @@
-package altcrawlhqserver
+package projects
 
 import (
 	"context"
@@ -6,12 +6,15 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/internetarchive/gocrawlhq"
+	"github.com/saveweb/altcrawlhq_server/internal/altcrawlhq_server/auth"
+	"github.com/saveweb/altcrawlhq_server/internal/altcrawlhq_server/db"
+	"github.com/saveweb/altcrawlhq_server/internal/altcrawlhq_server/tracking"
 	"github.com/saveweb/altcrawlhq_server/internal/sqlc_model"
 )
 
-func deleteHandler(c *gin.Context) {
+func DeleteHandler(c *gin.Context) {
 	project := c.Param("project")
-	if !isAuthorized(c) {
+	if !auth.IsAuthorized(c) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
@@ -24,15 +27,15 @@ func deleteHandler(c *gin.Context) {
 	}
 
 	ctx := context.TODO()
-	tx, err := dbWrite.Begin()
+	tx, err := db.DbWrite.Begin()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "Failed to start transaction"})
 		return
 	}
 	defer tx.Rollback()
-	qtx := dbWriteSqlc.WithTx(tx)
+	qtx := db.DbWriteSqlc.WithTx(tx)
 	for _, url := range finishedPayload.URLs {
-		err := qtx.DoneURL(ctx, sqlc_model.DoneURLParams{
+		err := qtx.DeleteURL(ctx, sqlc_model.DeleteURLParams{
 			Project: project,
 			ID:      url.ID,
 		})
@@ -45,7 +48,7 @@ func deleteHandler(c *gin.Context) {
 	err = tx.Commit()
 
 	if err == nil {
-		statusAdd(project, finishedPayload.LocalCrawls)
+		tracking.StatusAdd(project, finishedPayload.LocalCrawls)
 		c.JSON(http.StatusNoContent, gin.H{
 			"message":      "Deleted",
 			"DeletedCount": len(finishedPayload.URLs),

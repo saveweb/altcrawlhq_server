@@ -1,15 +1,17 @@
-package altcrawlhqserver
+package projects
 
 import (
 	"context"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/saveweb/altcrawlhq_server/internal/altcrawlhq_server/auth"
+	"github.com/saveweb/altcrawlhq_server/internal/altcrawlhq_server/db"
 	"github.com/saveweb/altcrawlhq_server/internal/sqlc_model"
 )
 
-func resetHandler(c *gin.Context) {
-	if !isAuthorized(c) {
+func ResetHandler(c *gin.Context) {
+	if !auth.IsAuthorized(c) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
@@ -21,13 +23,13 @@ func resetHandler(c *gin.Context) {
 	}
 
 	ctx := context.TODO()
-	tx, err := dbWrite.Begin()
+	tx, err := db.DbWrite.Begin()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "Failed to start transaction"})
 		return
 	}
 	defer tx.Rollback()
-	qtx := dbWriteSqlc.WithTx(tx)
+	qtx := db.DbWriteSqlc.WithTx(tx)
 
 	err = qtx.ResetURL(ctx, sqlc_model.ResetURLParams{
 		Project: project,

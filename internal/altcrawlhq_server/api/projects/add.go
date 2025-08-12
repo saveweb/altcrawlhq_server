@@ -1,4 +1,4 @@
-package altcrawlhqserver
+package projects
 
 import (
 	"context"
@@ -8,12 +8,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/internetarchive/gocrawlhq"
+	"github.com/saveweb/altcrawlhq_server/internal/altcrawlhq_server/auth"
+	"github.com/saveweb/altcrawlhq_server/internal/altcrawlhq_server/db"
+	"github.com/saveweb/altcrawlhq_server/internal/altcrawlhq_server/model"
 	"github.com/saveweb/altcrawlhq_server/internal/sqlc_model"
 )
 
-func addHandler(c *gin.Context) {
+func AddHandler(c *gin.Context) {
 	project := c.Param("project")
-	if !isAuthorized(c) {
+	if !auth.IsAuthorized(c) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
@@ -27,13 +30,13 @@ func addHandler(c *gin.Context) {
 	}
 
 	ctx := context.TODO()
-	tx, err := dbWrite.BeginTx(ctx, nil)
+	tx, err := db.DbWrite.BeginTx(ctx, nil)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "Failed to start transaction"})
 		return
 	}
 	defer tx.Rollback()
-	qtx := dbWriteSqlc.WithTx(tx)
+	qtx := db.DbWriteSqlc.WithTx(tx)
 
 	for _, url := range addPayload.URLs {
 		if url.ID == "" {
@@ -46,7 +49,7 @@ func addHandler(c *gin.Context) {
 			url.Status = "FRESH"
 		}
 
-		err := qtx.CreateURL(ctx, ToCreateURLParams(URL2SqlcURL(&url, project)))
+		err := qtx.CreateURL(ctx, model.ToCreateURLParams(model.URL2SqlcURL(&url, project)))
 		if err != nil {
 			if err.Error() == "sqlite3: constraint failed: UNIQUE constraint failed: urls.project, urls.type, urls.value" {
 				slog.Debug("URL already exists in LQ", "value", url.Value, "via", url.Via)

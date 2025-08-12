@@ -1,4 +1,4 @@
-package altcrawlhqserver
+package model
 
 import (
 	"github.com/internetarchive/gocrawlhq"

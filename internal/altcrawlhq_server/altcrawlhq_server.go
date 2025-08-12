@@ -2,18 +2,15 @@ package altcrawlhqserver
 
 import (
 	_ "embed"
-	"log/slog"
 	"net/http"
-	"os"
-	"runtime"
 	"time"
-
-	"database/sql"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/ncruces/go-sqlite3/driver"
 	_ "github.com/ncruces/go-sqlite3/embed"
-	"github.com/saveweb/altcrawlhq_server/internal/sqlc_model"
+	"github.com/saveweb/altcrawlhq_server/internal/altcrawlhq_server/api/projects"
+	"github.com/saveweb/altcrawlhq_server/internal/altcrawlhq_server/api/ws"
+	"github.com/saveweb/altcrawlhq_server/internal/altcrawlhq_server/db"
 )
 
 type FeedRequest struct {
@@ -21,37 +18,10 @@ type FeedRequest struct {
 	Strategy string `json:"strategy"`
 }
 
-var dbRead, dbWrite *sql.DB
-var dbReadSqlc, dbWriteSqlc *sqlc_model.Queries
-
-//go:embed schema.sql
-var ddl string
-
-func init() {
-	os.MkdirAll("data", 0755)
-
-	dbRead, _ = sql.Open("sqlite3", "file:data/hq.db")
-	dbRead.SetMaxOpenConns(runtime.NumCPU())
-
-	dbWrite, _ = sql.Open("sqlite3", "file:data/hq.db")
-	dbWrite.SetMaxOpenConns(1)
-	dbWrite.Exec("PRAGMA journal_mode=WAL")
-
-	if _, err := dbWrite.Exec(ddl); err != nil {
-		slog.Error("Failed to create schema", "error", err.Error()) // ignore this
-	}
-
-	dbReadSqlc = sqlc_model.New(dbRead)
-	dbWriteSqlc = sqlc_model.New(dbWrite)
-}
-
-func shutdown() {
-	dbRead.Close()
-	dbWrite.Close()
-}
-
 func ServeHTTP() {
-	defer shutdown()
+	db.Start()
+	defer db.Shutdown()
+
 	g := gin.New()
 	g.GET("/", func(c *gin.Context) {
 		time.Sleep(1 * time.Second)
@@ -60,19 +30,27 @@ func ServeHTTP() {
 		})
 	})
 
-	apiGroup := g.Group("/api")
+	apiG := g.Group("/api")
 	{
-		projectsGroup := apiGroup.Group("/projects/:project/")
+		projectsG := apiG.Group("/projects/:project/")
 		{
-			projectsGroup.POST("/urls", addHandler)
-			projectsGroup.GET("/urls", getHandler)
-			projectsGroup.DELETE("/urls", deleteHandler)
+			projectsG.POST("/urls", projects.AddHandler)
+			projectsG.GET("/urls", projects.GetHandler)
+			projectsG.DELETE("/urls", projects.DeleteHandler)
 
-			projectsGroup.POST("/seencheck", seencheckHandler)
-			projectsGroup.POST("/reset/:ID", resetHandler)
+			projectsG.POST("/seencheck", projects.SeencheckHandler)
+			projectsG.POST("/reset/:ID", projects.ResetHandler)
 		}
-		apiGroup.GET("/ws", websocketHandler)
-		apiGroup.GET("/online", onlineClientsHandler)
+		apiG.GET("/ws", ws.WebsocketHandler)
+	}
+	adminG := g.Group("/admin")
+	{
+
+		adminApiG := adminG.Group("/api")
+		{
+			adminApiG.GET("/online", ws.OnlineClientsHandler)
+			adminApiG.GET("/send-signal/:identifier", ws.SendSignalHandler)
+		}
 	}
 	if err := g.Run(); err != nil {
 		panic(err)

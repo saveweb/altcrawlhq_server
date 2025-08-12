@@ -1,4 +1,4 @@
-package altcrawlhqserver
+package projects
 
 import (
 	"context"
@@ -7,6 +7,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/internetarchive/gocrawlhq"
+	"github.com/saveweb/altcrawlhq_server/internal/altcrawlhq_server/auth"
+	"github.com/saveweb/altcrawlhq_server/internal/altcrawlhq_server/db"
+	"github.com/saveweb/altcrawlhq_server/internal/altcrawlhq_server/model"
 	"github.com/saveweb/altcrawlhq_server/internal/sqlc_model"
 )
 
@@ -21,15 +24,14 @@ type URLRecord struct {
 }
 
 type feedRequest struct {
-	Size     int    `json:"size" form:"size" binding:"required" validate:"min=0,max=100"`
-	Strategy string `json:"strategy" form:"strategy" binding:"required" validate:"oneof=lifo fifo"`
+	Size int `json:"size" form:"size" binding:"required" validate:"min=0,max=100"`
 }
 
-func getHandler(c *gin.Context) {
+func GetHandler(c *gin.Context) {
 	project := c.Param("project")
 	request := feedRequest{}
 
-	if !isAuthorized(c) {
+	if !auth.IsAuthorized(c) {
 		slog.Error("Unauthorized")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
@@ -41,19 +43,8 @@ func getHandler(c *gin.Context) {
 		return
 	}
 
-	// var opts *options.FindOneAndUpdateOptions
-	switch request.Strategy {
-	case "lifo":
-		// opts = options.FindOneAndUpdate().SetSort(bson.M{"_id": -1})
-	case "fifo":
-		// opts = options.FindOneAndUpdate().SetSort(bson.M{"_id": 1})
-	default:
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Strategy"})
-		return
-	}
-
 	ctx := context.TODO()
-	tx, err := dbWrite.Begin()
+	tx, err := db.DbWrite.Begin()
 	if err != nil {
 		slog.Error("Failed to start transaction", "error", err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "Failed to start transaction"})
@@ -61,7 +52,7 @@ func getHandler(c *gin.Context) {
 	}
 	defer tx.Rollback()
 
-	qtx := dbWriteSqlc.WithTx(tx)
+	qtx := db.DbWriteSqlc.WithTx(tx)
 
 	sqlcUrls, err := qtx.GetFreshURLs(ctx, sqlc_model.GetFreshURLsParams{
 		Project: project,
@@ -84,7 +75,7 @@ func getHandler(c *gin.Context) {
 			return
 		}
 
-		URLs = append(URLs, *SqlcURL2hqURL(&record))
+		URLs = append(URLs, *model.SqlcURL2hqURL(&record))
 	}
 
 	err = tx.Commit()

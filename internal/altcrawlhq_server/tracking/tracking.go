@@ -1,4 +1,4 @@
-package altcrawlhqserver
+package tracking
 
 import (
 	"log/slog"
@@ -14,7 +14,7 @@ import (
 
 var trackingStatus = map[string]int{}
 
-func statusAdd(key string, value int) {
+func StatusAdd(key string, value int) {
 	if _, ok := trackingStatus[key]; !ok {
 		trackingStatus[key] = 0
 	}
