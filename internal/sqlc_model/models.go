@@ -21,6 +21,5 @@ type Url struct {
 	Type      string
 	Crawler   string
 	Status    string
-	LiftOff   int64
 	Timestamp int64
 }

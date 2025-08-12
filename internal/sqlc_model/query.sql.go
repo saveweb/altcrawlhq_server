@@ -13,7 +13,7 @@ const claimThisURL = `-- name: ClaimThisURL :exec
 UPDATE urls
 SET status = 'CLAIMED', timestamp = strftime('%s', 'now')
 WHERE project = ? AND id = ?
-RETURNING project, id, value, via, host, path, type, crawler, status, lift_off, timestamp
+RETURNING project, id, value, via, host, path, type, crawler, status, timestamp
 `
 
 type ClaimThisURLParams struct {
@@ -63,8 +63,8 @@ func (q *Queries) CreateSeen(ctx context.Context, arg CreateSeenParams) error {
 }
 
 const createURL = `-- name: CreateURL :exec
-INSERT INTO urls (project, id, value, via, host, path, type, crawler, status, lift_off, timestamp)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+INSERT INTO urls (project, id, value, via, host, path, type, crawler, status, timestamp)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 type CreateURLParams struct {
@@ -77,7 +77,6 @@ type CreateURLParams struct {
 	Type      string
 	Crawler   string
 	Status    string
-	LiftOff   int64
 	Timestamp int64
 }
 
@@ -92,7 +91,6 @@ func (q *Queries) CreateURL(ctx context.Context, arg CreateURLParams) error {
 		arg.Type,
 		arg.Crawler,
 		arg.Status,
-		arg.LiftOff,
 		arg.Timestamp,
 	)
 	return err
@@ -131,9 +129,36 @@ func (q *Queries) DoneURL(ctx context.Context, arg DoneURLParams) error {
 	return err
 }
 
+const getAllProjects = `-- name: GetAllProjects :many
+SELECT DISTINCT project FROM urls
+`
+
+func (q *Queries) GetAllProjects(ctx context.Context) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, getAllProjects)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var project string
+		if err := rows.Scan(&project); err != nil {
+			return nil, err
+		}
+		items = append(items, project)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getFreshURLs = `-- name: GetFreshURLs :many
 
-SELECT project, id, value, via, host, path, type, crawler, status, lift_off, timestamp FROM urls
+SELECT project, id, value, via, host, path, type, crawler, status, timestamp FROM urls
 WHERE project = ? AND status = 'FRESH'
 LIMIT ?
 `
@@ -166,7 +191,6 @@ func (q *Queries) GetFreshURLs(ctx context.Context, arg GetFreshURLsParams) ([]U
 			&i.Type,
 			&i.Crawler,
 			&i.Status,
-			&i.LiftOff,
 			&i.Timestamp,
 		); err != nil {
 			return nil, err

@@ -46,11 +46,17 @@ func ServeHTTP() {
 	}
 	adminG := g.Group("/admin")
 	{
-		adminG.GET("/projects", admin.ProjectsHandler)
+		adminG.GET("/", admin.IndexHandler)
+		adminG.GET("/online_clients", admin.OnlineClientsHandler)
+		adminG.GET("/list_projects", admin.ListProjectsHandler)
+		adminG.GET("/project_addurl", admin.ProjectAddURLHandler)
 
 		adminApiG := adminG.Group("/api")
 		{
 			adminApiG.GET("/online", ws.OnlineClientsHandler)
+			adminApiG.GET("/clients-table", admin.ClientsTableHandler)
+			adminApiG.GET("/projects-table", admin.ProjectsTableHandler)
+			adminApiG.POST("/add-url", admin.AddURLHandler)
 			adminApiG.GET("/send-signal/:identifier", ws.SendSignalHandler)
 		}
 	}

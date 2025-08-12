@@ -6,7 +6,9 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"slices"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -39,14 +41,7 @@ type ClientInfo struct {
 	LastPing   time.Time `json:"last_ping"`
 }
 
-func OnlineClientsHandler(c *gin.Context) {
-	// if !isAuthorized(c) {
-	// 	c.JSON(http.StatusUnauthorized, gin.H{
-	// 		"error": "Unauthorized",
-	// 	})
-	// 	return
-	// }
-
+func GetOnlineClients() []ClientInfo {
 	clients := make([]ClientInfo, 0)
 	for _, client := range onlineClientsStats.Items() {
 		clientInfo := ClientInfo{
@@ -56,6 +51,26 @@ func OnlineClientsHandler(c *gin.Context) {
 		}
 		clients = append(clients, clientInfo)
 	}
+
+	// sort by project::identifier
+	slices.SortFunc(clients, func(a, b ClientInfo) int {
+		if cmp := strings.Compare(a.Project, b.Project); cmp != 0 {
+			return cmp
+		}
+		return strings.Compare(a.Identifier, b.Identifier)
+	})
+	return clients
+}
+
+func OnlineClientsHandler(c *gin.Context) {
+	// if !isAuthorized(c) {
+	// 	c.JSON(http.StatusUnauthorized, gin.H{
+	// 		"error": "Unauthorized",
+	// 	})
+	// 	return
+	// }
+
+	clients := GetOnlineClients()
 	c.JSON(http.StatusOK, clients)
 }
 

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AltCrawlHQ Server Admin - Projects</title>
+    <script src="https://unpkg.com/htmx.org@2.0.6"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        h1 {
+            color: #333;
+            margin: 0;
+        }
+        .back-link {
+            color: #007bff;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        .status-info {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #e3f2fd;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .status-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .client-count {
+            font-weight: bold;
+            color: #1976d2;
+        }
+        .refresh-info {
+            font-size: 0.9em;
+            color: #666;
+        }
+        .refresh-btn {
+            padding: 8px 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .refresh-btn:hover {
+            background-color: #0056b3;
+        }
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        .clients-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .clients-table th,
+        .clients-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .clients-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+        .clients-table tr:hover {
+            background-color: #f5f5f5;
+        }
+        .status-indicator {
+            font-size: 1.2em;
+            margin-right: 5px;
+        }
+        .actions {
+            display: flex;
+            gap: 5px;
+        }
+        .btn {
+            padding: 6px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            background-color: #007bff;
+            color: white;
+            transition: background-color 0.2s;
+        }
+        .btn:hover:not(:disabled) {
+            background-color: #0056b3;
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+        }
+        .btn-danger:hover:not(:disabled) {
+            background-color: #c82333;
+        }
+        .btn-warning {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        .btn-warning:hover:not(:disabled) {
+            background-color: #e0a800;
+        }
+        .no-clients {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 40px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+        }
+        .alert {
+            padding: 12px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            display: none;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .htmx-indicator {
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .htmx-request .htmx-indicator {
+            opacity: 1;
+        }
+        .htmx-request.htmx-indicator {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Online Clients Dashboard</h1>
+            <a href="/admin" class="back-link">← Back to Admin</a>
+        </div>
+        
+        <div id="alert-container"></div>
+        
+        <div class="status-info">
+            <div class="status-left">
+                <div class="client-count">
+                    Clients: <span id="client-count">0</span>
+                </div>
+                <div class="refresh-info">
+                    Last updated: <span id="last-update">Never</span>
+                    <span class="htmx-indicator">🔄</span>
+                </div>
+            </div>
+            <button 
+                class="refresh-btn"
+                hx-get="/admin/api/clients-table"
+                hx-target="#clients-container"
+                hx-indicator=".htmx-indicator"
+                onclick="updateTimestamp()">
+                Refresh
+            </button>
+        </div>
+
+        <div id="clients-container" 
+             hx-get="/admin/api/clients-table" 
+             hx-trigger="load, every 1s"
+             hx-indicator=".htmx-indicator">
+            <div class="no-clients">Loading clients...</div>
+        </div>
+    </div>
+
+    <script>
+        function updateTimestamp() {
+            document.getElementById('last-update').textContent = new Date().toLocaleString();
+        }
+
+        function sendSignal(identifier, signal, signalName) {
+            if (!confirm(`Send ${signalName} (${signal}) to ${identifier}?`)) {
+                return;
+            }
+            
+            // Disable the button temporarily
+            const buttons = document.querySelectorAll(`[data-identifier="${identifier}"] button`);
+            buttons.forEach(btn => btn.disabled = true);
+            
+            fetch(`/admin/api/send-signal/${identifier}?signal=${signal}`, {
+                method: 'GET'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    showAlert('Error: ' + data.error, 'error');
+                } else {
+                    showAlert(`Signal ${signalName} sent to ${identifier}`, 'success');
+                }
+            })
+            .catch(error => {
+                showAlert('Error sending signal: ' + error, 'error');
+            })
+            .finally(() => {
+                // Re-enable buttons
+                buttons.forEach(btn => btn.disabled = false);
+            });
+        }
+
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alert-container');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            alert.style.display = 'block';
+            
+            alertContainer.innerHTML = '';
+            alertContainer.appendChild(alert);
+            
+            // Auto hide after 3 seconds
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 3000);
+        }
+
+        function getStatusEmoji(lastPing) {
+            const now = new Date();
+            const pingTime = new Date(lastPing);
+            const diffSeconds = (now - pingTime) / 1000;
+            
+            if (diffSeconds <= 5) {
+                return '🟢';
+            } else if (diffSeconds <= 30) {
+                return '🟡';
+            } else {
+                return '🔴';
+            }
+        }
+
+        function formatTime(timeString) {
+            const time = new Date(timeString);
+            return time.toLocaleString();
+        }
+
+        // Update timestamp when HTMX requests complete
+        document.body.addEventListener('htmx:afterRequest', function(evt) {
+            if (evt.detail.xhr.status === 200) {
+                updateTimestamp();
+            }
+        });
+    </script>
+</body>
+</html>

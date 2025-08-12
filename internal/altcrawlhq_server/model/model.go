@@ -15,7 +15,6 @@ func SqlcURL2hqURL(in *sqlc_model.Url) *gocrawlhq.URL {
 		Type:      in.Type,
 		Crawler:   in.Crawler,
 		Status:    in.Status,
-		LiftOff:   in.LiftOff,
 		Timestamp: in.Timestamp,
 	}
 }
@@ -32,7 +31,6 @@ func URL2SqlcURL(in *gocrawlhq.URL, project string) *sqlc_model.Url {
 		Type:      in.Type,
 		Crawler:   in.Crawler,
 		Status:    in.Status,
-		LiftOff:   in.LiftOff,
 		Timestamp: in.Timestamp,
 	}
 }
@@ -49,7 +47,6 @@ func ToCreateURLParams(in *sqlc_model.Url) sqlc_model.CreateURLParams {
 		Type:      in.Type,
 		Crawler:   in.Crawler,
 		Status:    in.Status,
-		LiftOff:   in.LiftOff,
 		Timestamp: in.Timestamp,
 	}
 }

@@ -8,7 +8,6 @@ CREATE TABLE IF NOT EXISTS urls (
     type TEXT NOT NULL CHECK (type IN ('seed', 'asset')),
     crawler TEXT DEFAULT '' NOT NULL,
     status TEXT NOT NULL DEFAULT 'FRESH' CHECK (status IN ('FRESH', 'CLAIMED', 'DONE')),
-    lift_off INTEGER NOT NULL DEFAULT 0,
     timestamp INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
     PRIMARY KEY (project, id)
 );

@@ -16,8 +16,8 @@ WHERE project = ? AND id = ?
 RETURNING *;
 
 -- name: CreateURL :exec
-INSERT INTO urls (project, id, value, via, host, path, type, crawler, status, lift_off, timestamp)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT INTO urls (project, id, value, via, host, path, type, crawler, status, timestamp)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 -- index: PRIMARY KEY
 -- name: DoneURL :exec
@@ -50,3 +50,6 @@ VALUES (?, ?, ?);
 UPDATE seens
 SET timestamp = strftime('%s', 'now')
 WHERE project = ? AND type = ? AND value = ?;
+
+-- name: GetAllProjects :many
+SELECT DISTINCT project FROM urls;

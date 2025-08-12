@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add URL - AltCrawlHQ Server Admin</title>
+    <script src="https://unpkg.com/htmx.org@2.0.6"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        h1 {
+            color: #333;
+            margin: 0;
+        }
+        .back-link {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 8px 16px;
+            border: 1px solid #007bff;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+        .back-link:hover {
+            background-color: #007bff;
+            color: white;
+        }
+        .form-container {
+            background-color: #f8f9fa;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .form-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            flex: 1;
+        }
+        .form-group.full-width {
+            flex: none;
+            width: 100%;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+        .required {
+            color: #dc3545;
+        }
+        input[type="text"], input[type="url"], select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        textarea {
+            height: 80px;
+            resize: vertical;
+        }
+        .submit-btn {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: background-color 0.2s ease;
+            width: 100%;
+        }
+        .submit-btn:hover {
+            background-color: #218838;
+        }
+        .submit-btn:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        #result {
+            margin-top: 20px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border: 1px solid #c3e6cb;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border: 1px solid #f5c6cb;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .help-text {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .htmx-indicator {
+            display: none;
+        }
+        .htmx-request .htmx-indicator {
+            display: inline-block;
+        }
+        .htmx-request .submit-btn {
+            opacity: 0.7;
+        }
+        .form-description {
+            background-color: #e7f3ff;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border-left: 4px solid #007bff;
+        }
+        .field-examples {
+            background-color: #fff;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        .field-examples h4 {
+            margin: 0 0 10px 0;
+            color: #495057;
+        }
+        .field-examples ul {
+            margin: 5px 0;
+            padding-left: 20px;
+        }
+        .field-examples li {
+            margin: 3px 0;
+            font-size: 13px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>➕ Add New URL</h1>
+            <a href="/admin" class="back-link">← Back to Admin</a>
+        </div>
+        
+        <div class="form-description">
+            <strong>Create a new URL entry for the crawling system.</strong>
+            <p>Fill in the required fields below to add a new URL to a project. The system will validate the input and store it in the database for crawling.</p>
+        </div>
+
+        <div class="form-container">
+            <form id="url-form" 
+                  hx-post="/admin/api/add-url" 
+                  hx-target="#result"
+                  hx-indicator="#loading-indicator">
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="project">Project <span class="required">*</span></label>
+                        <input type="text" id="project" name="project" required>
+                        <div class="help-text">The project name this URL belongs to</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="id">ID <span class="required">*</span></label>
+                        <input type="text" id="id" name="id" required>
+                        <div class="help-text">Unique identifier for this URL within the project</div>
+                    </div>
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="value">URL Value <span class="required">*</span></label>
+                    <input type="url" id="value" name="value" required placeholder="https://example.com/page">
+                    <div class="help-text">The actual URL to be crawled</div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="type">Type <span class="required">*</span></label>
+                        <select id="type" name="type" required>
+                            <option value="">Select Type</option>
+                            <option value="seed">Seed</option>
+                            <option value="asset">Asset</option>
+                        </select>
+                        <div class="help-text">Type of URL: seed (starting point) or asset (resource)</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="status">Status</label>
+                        <select id="status" name="status">
+                            <option value="FRESH" selected>FRESH</option>
+                            <option value="CLAIMED">CLAIMED</option>
+                            <option value="DONE">DONE</option>
+                        </select>
+                        <div class="help-text">Current status of the URL (default: FRESH)</div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="via">Via</label>
+                        <input type="text" id="via" name="via" placeholder="Optional">
+                        <div class="help-text">Source URL that led to this URL</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="crawler">Crawler</label>
+                        <input type="text" id="crawler" name="crawler" placeholder="Optional">
+                        <div class="help-text">Name of the crawler that will handle this URL</div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="host">Host</label>
+                        <input type="text" id="host" name="host" placeholder="example.com">
+                        <div class="help-text">Hostname extracted from the URL</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="path">Path</label>
+                        <input type="text" id="path" name="path" placeholder="/page.html">
+                        <div class="help-text">Path portion of the URL</div>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn">
+                    <span class="htmx-indicator">Creating...</span>
+                    <span id="loading-indicator" style="display: none;">Creating URL...</span>
+                    Create URL
+                </button>
+            </form>
+        </div>
+
+        <div id="result"></div>
+
+        <div class="field-examples">
+            <h4>📝 Field Examples:</h4>
+            <ul>
+                <li><strong>Project:</strong> my-website, news-scraper, blog-crawler</li>
+                <li><strong>ID:</strong> unique-123, page-001, article-456</li>
+                <li><strong>URL Value:</strong> https://example.com/article/123, https://site.com/page.html</li>
+                <li><strong>Type:</strong> seed (starting URLs), asset (images, CSS, JS files)</li>
+                <li><strong>Via:</strong> https://parent-page.com (the page that linked to this URL)</li>
+                <li><strong>Crawler:</strong> main-crawler, asset-downloader, link-extractor</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Auto-fill host and path when URL value changes
+        document.getElementById('value').addEventListener('input', function(e) {
+            try {
+                const url = new URL(e.target.value);
+                document.getElementById('host').value = url.hostname;
+                document.getElementById('path').value = url.pathname + url.search + url.hash;
+            } catch (err) {
+                // Invalid URL, don't auto-fill
+            }
+        });
+
+        // Auto-generate ID based on project and URL
+        function generateID() {
+            const project = document.getElementById('project').value;
+            const value = document.getElementById('value').value;
+            if (project && value) {
+                try {
+                    const url = new URL(value);
+                    const pathHash = url.pathname.replace(/[^a-zA-Z0-9]/g, '-').substring(0, 20);
+                    const timestamp = Date.now().toString().slice(-6);
+                    document.getElementById('id').value = `${project}-${pathHash}-${timestamp}`;
+                } catch (err) {
+                    // Invalid URL
+                }
+            }
+        }
+
+        document.getElementById('project').addEventListener('input', generateID);
+        document.getElementById('value').addEventListener('input', generateID);
+    </script>
+</body>
+</html>
