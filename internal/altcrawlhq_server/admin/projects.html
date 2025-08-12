@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AltCrawlHQ Server Admin</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .status-info {
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #e3f2fd;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .clients-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .clients-table th,
+        .clients-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .clients-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+        .clients-table tr:hover {
+            background-color: #f5f5f5;
+        }
+        .status-indicator {
+            font-size: 1.2em;
+            margin-right: 5px;
+        }
+        .actions {
+            display: flex;
+            gap: 5px;
+        }
+        .btn {
+            padding: 4px 8px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            background-color: #007bff;
+            color: white;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+        }
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+        .btn-warning {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        .btn-warning:hover {
+            background-color: #e0a800;
+        }
+        .no-clients {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 40px;
+        }
+        .refresh-indicator {
+            margin-left: 10px;
+            font-size: 0.9em;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AltCrawlHQ Server Admin</h1>
+        
+        <div class="status-info">
+            <strong>Clients: <span id="client-count">0</span></strong>
+            <span class="refresh-indicator">Last updated: <span id="last-update">Never</span></span>
+        </div>
+
+        <div id="clients-container">
+            <table class="clients-table" id="clients-table" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>Status</th>
+                        <th>Identifier</th>
+                        <th>Project</th>
+                        <th>Last Ping</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="clients-tbody">
+                </tbody>
+            </table>
+            <div id="no-clients" class="no-clients">
+                No clients online
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let clients = [];
+        
+        function updateLastUpdateTime() {
+            document.getElementById('last-update').textContent = new Date().toISOString();
+        }
+
+        function getStatusEmoji(lastPing) {
+            const now = new Date();
+            const pingTime = new Date(lastPing);
+            const diffSeconds = (now - pingTime) / 1000;
+            
+            if (diffSeconds <= 5) {
+                return '🟢';
+            } else if (diffSeconds <= 30) {
+                return '🟡';
+            } else {
+                return '🔴';
+            }
+        }
+
+        function formatTime(timeString) {
+            const time = new Date(timeString);
+            return time.toISOString();
+        }
+
+        function sendSignal(identifier, signal, signalName) {
+            if (!confirm(`Send ${signalName} (${signal}) to ${identifier}?`)) {
+                return;
+            }
+            
+            fetch(`/admin/api/send-signal/${identifier}?signal=${signal}`, {
+                method: 'GET'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                } else {
+                    alert(`Signal ${signalName} sent to ${identifier}`);
+                }
+            })
+            .catch(error => {
+                alert('Error sending signal: ' + error);
+            });
+        }
+
+        function renderClients() {
+            const clientCount = document.getElementById('client-count');
+            const clientsTable = document.getElementById('clients-table');
+            const clientsTbody = document.getElementById('clients-tbody');
+            const noClients = document.getElementById('no-clients');
+            
+            clientCount.textContent = clients.length;
+            
+            if (clients.length === 0) {
+                clientsTable.style.display = 'none';
+                noClients.style.display = 'block';
+                return;
+            }
+            
+            // Sort clients by identifier
+            clients.sort((a, b) => a.identifier.localeCompare(b.identifier));
+            
+            clientsTable.style.display = 'table';
+            noClients.style.display = 'none';
+            
+            clientsTbody.innerHTML = '';
+            
+            clients.forEach(client => {
+                const row = document.createElement('tr');
+                const statusEmoji = getStatusEmoji(client.last_ping);
+                
+                row.innerHTML = `
+                    <td><span class="status-indicator">${statusEmoji}</span></td>
+                    <td><strong>${client.identifier}</strong></td>
+                    <td>${client.project}</td>
+                    <td>${formatTime(client.last_ping)}</td>
+                    <td class="actions">
+                        <button class="btn" onclick="sendSignal('${client.identifier}', 10, 'SIGUSR1')">USR1</button>
+                        <button class="btn" onclick="sendSignal('${client.identifier}', 12, 'SIGUSR2')">USR2</button>
+                        <button class="btn btn-warning" onclick="sendSignal('${client.identifier}', 15, 'SIGTERM')">TERM</button>
+                        <button class="btn btn-danger" onclick="sendSignal('${client.identifier}', 9, 'SIGKILL')">KILL</button>
+                    </td>
+                `;
+                
+                clientsTbody.appendChild(row);
+            });
+        }
+
+        function fetchClients() {
+            fetch('/admin/api/online')
+                .then(response => response.json())
+                .then(data => {
+                    clients = data;
+                    renderClients();
+                    updateLastUpdateTime();
+                })
+                .catch(error => {
+                    console.error('Error fetching clients:', error);
+                });
+        }
+
+        // Initial load
+        fetchClients();
+        
+        // Refresh every 5 seconds
+        setInterval(fetchClients, 5000);
+    </script>
+</body>
+</html>

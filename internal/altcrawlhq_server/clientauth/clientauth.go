@@ -1,4 +1,4 @@
-package auth
+package clientauth
 
 import "github.com/gin-gonic/gin"
 

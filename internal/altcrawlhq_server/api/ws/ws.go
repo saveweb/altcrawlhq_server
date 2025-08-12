@@ -14,12 +14,13 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/internetarchive/gocrawlhq"
 	"github.com/jellydator/ttlcache/v3"
-	"github.com/saveweb/altcrawlhq_server/internal/altcrawlhq_server/auth"
+	"github.com/saveweb/altcrawlhq_server/internal/altcrawlhq_server/clientauth"
 )
 
 type IDMsgAndConn struct {
-	Msg  gocrawlhq.IdentifyMessage
-	Conn *websocket.Conn
+	Msg      gocrawlhq.IdentifyMessage
+	Conn     *websocket.Conn
+	LastPing time.Time
 }
 
 var onlineClientsStats = ttlcache.New(
@@ -32,6 +33,12 @@ func init() {
 	fmt.Println("Initialized onlineClientsStats!")
 }
 
+type ClientInfo struct {
+	Project    string    `json:"project"`
+	Identifier string    `json:"identifier"`
+	LastPing   time.Time `json:"last_ping"`
+}
+
 func OnlineClientsHandler(c *gin.Context) {
 	// if !isAuthorized(c) {
 	// 	c.JSON(http.StatusUnauthorized, gin.H{
@@ -40,15 +47,20 @@ func OnlineClientsHandler(c *gin.Context) {
 	// 	return
 	// }
 
-	clients := make([]gocrawlhq.IdentifyMessage, 0)
+	clients := make([]ClientInfo, 0)
 	for _, client := range onlineClientsStats.Items() {
-		clients = append(clients, client.Value().Msg)
+		clientInfo := ClientInfo{
+			Identifier: client.Value().Msg.Identifier,
+			Project:    client.Value().Msg.Project,
+			LastPing:   client.Value().LastPing,
+		}
+		clients = append(clients, clientInfo)
 	}
 	c.JSON(http.StatusOK, clients)
 }
 
 func WebsocketHandler(c *gin.Context) {
-	if !auth.IsAuthorized(c) {
+	if !clientauth.IsAuthorized(c) {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": "Unauthorized",
 		})
@@ -117,7 +129,11 @@ func handleIdentifyMessage(ws *websocket.Conn, wsMsg []byte) error {
 		return fmt.Errorf("failed to unmarshal identify message: %w", err)
 	}
 
-	onlineClientsStats.Set(identifyMessage.Payload.Identifier, IDMsgAndConn{Msg: identifyMessage.Payload, Conn: ws}, ttlcache.DefaultTTL)
+	onlineClientsStats.Set(identifyMessage.Payload.Identifier, IDMsgAndConn{
+		Msg:      identifyMessage.Payload,
+		Conn:     ws,
+		LastPing: time.Now(),
+	}, ttlcache.DefaultTTL)
 
 	fmt.Printf("Identify Message: %+v\n", identifyMessage)
 

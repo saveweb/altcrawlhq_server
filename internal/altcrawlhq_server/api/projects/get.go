@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/internetarchive/gocrawlhq"
-	"github.com/saveweb/altcrawlhq_server/internal/altcrawlhq_server/auth"
+	"github.com/saveweb/altcrawlhq_server/internal/altcrawlhq_server/clientauth"
 	"github.com/saveweb/altcrawlhq_server/internal/altcrawlhq_server/db"
 	"github.com/saveweb/altcrawlhq_server/internal/altcrawlhq_server/model"
 	"github.com/saveweb/altcrawlhq_server/internal/sqlc_model"
@@ -31,7 +31,7 @@ func GetHandler(c *gin.Context) {
 	project := c.Param("project")
 	request := feedRequest{}
 
-	if !auth.IsAuthorized(c) {
+	if !clientauth.IsAuthorized(c) {
 		slog.Error("Unauthorized")
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return

@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	_ "github.com/ncruces/go-sqlite3/driver"
 	_ "github.com/ncruces/go-sqlite3/embed"
+	"github.com/saveweb/altcrawlhq_server/internal/altcrawlhq_server/admin"
 	"github.com/saveweb/altcrawlhq_server/internal/altcrawlhq_server/api/projects"
 	"github.com/saveweb/altcrawlhq_server/internal/altcrawlhq_server/api/ws"
 	"github.com/saveweb/altcrawlhq_server/internal/altcrawlhq_server/db"
@@ -45,6 +46,7 @@ func ServeHTTP() {
 	}
 	adminG := g.Group("/admin")
 	{
+		adminG.GET("/projects", admin.ProjectsHandler)
 
 		adminApiG := adminG.Group("/api")
 		{
