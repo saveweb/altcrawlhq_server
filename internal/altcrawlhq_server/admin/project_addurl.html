@@ -289,14 +289,9 @@
             const project = document.getElementById('project').value;
             const value = document.getElementById('value').value;
             if (project && value) {
-                try {
-                    const url = new URL(value);
-                    const pathHash = url.pathname.replace(/[^a-zA-Z0-9]/g, '-').substring(0, 20);
-                    const timestamp = Date.now().toString().slice(-6);
-                    document.getElementById('id').value = `${project}-${pathHash}-${timestamp}`;
-                } catch (err) {
-                    // Invalid URL
-                }
+                // Generate UUID v4
+                const uuid = crypto.randomUUID();
+                document.getElementById('id').value = uuid;
             }
         }
 
