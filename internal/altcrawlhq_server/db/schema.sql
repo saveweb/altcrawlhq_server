@@ -23,3 +23,4 @@ CREATE TABLE IF NOT EXISTS seens (
     timestamp INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
     PRIMARY KEY (project, type, value)
 );
+CREATE INDEX IF NOT EXISTS seens_timestamp ON seens (timestamp); -- for GC

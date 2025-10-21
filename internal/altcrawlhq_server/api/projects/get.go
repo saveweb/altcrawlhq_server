@@ -7,7 +7,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/internetarchive/gocrawlhq"
-	"github.com/saveweb/altcrawlhq_server/internal/altcrawlhq_server/clientauth"
 	"github.com/saveweb/altcrawlhq_server/internal/altcrawlhq_server/db"
 	"github.com/saveweb/altcrawlhq_server/internal/altcrawlhq_server/model"
 	"github.com/saveweb/altcrawlhq_server/internal/sqlc_model"
@@ -30,12 +29,6 @@ type feedRequest struct {
 func GetHandler(c *gin.Context) {
 	project := c.Param("project")
 	request := feedRequest{}
-
-	if !clientauth.IsAuthorized(c) {
-		slog.Error("Unauthorized")
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
 
 	if err := c.Bind(&request); err != nil {
 		slog.Error("Bad Request", "error", err.Error())

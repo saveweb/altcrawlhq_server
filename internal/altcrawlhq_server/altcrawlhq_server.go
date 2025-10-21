@@ -11,12 +11,24 @@ import (
 	"github.com/saveweb/altcrawlhq_server/internal/altcrawlhq_server/admin"
 	"github.com/saveweb/altcrawlhq_server/internal/altcrawlhq_server/api/projects"
 	"github.com/saveweb/altcrawlhq_server/internal/altcrawlhq_server/api/ws"
+	"github.com/saveweb/altcrawlhq_server/internal/altcrawlhq_server/clientauth"
 	"github.com/saveweb/altcrawlhq_server/internal/altcrawlhq_server/db"
 )
 
 type FeedRequest struct {
 	Size     int    `json:"size"`
 	Strategy string `json:"strategy"`
+}
+
+func AuthMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if !clientauth.IsAuthorized(c) {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
 }
 
 func ServeHTTP() {
@@ -33,7 +45,7 @@ func ServeHTTP() {
 
 	apiG := g.Group("/api")
 	{
-		projectsG := apiG.Group("/projects/:project/")
+		projectsG := apiG.Group("/projects/:project/", AuthMiddleware())
 		{
 			projectsG.POST("/urls", projects.AddHandler)
 			projectsG.GET("/urls", projects.GetHandler)

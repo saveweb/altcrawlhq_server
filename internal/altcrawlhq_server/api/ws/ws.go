@@ -16,7 +16,6 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/internetarchive/gocrawlhq"
 	"github.com/jellydator/ttlcache/v3"
-	"github.com/saveweb/altcrawlhq_server/internal/altcrawlhq_server/clientauth"
 )
 
 type IDMsgAndConn struct {
@@ -75,12 +74,6 @@ func OnlineClientsHandler(c *gin.Context) {
 }
 
 func WebsocketHandler(c *gin.Context) {
-	if !clientauth.IsAuthorized(c) {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Unauthorized",
-		})
-		return
-	}
 	upGrader := websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
 			return true

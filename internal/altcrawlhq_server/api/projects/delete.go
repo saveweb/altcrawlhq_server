@@ -6,7 +6,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/internetarchive/gocrawlhq"
-	"github.com/saveweb/altcrawlhq_server/internal/altcrawlhq_server/clientauth"
 	"github.com/saveweb/altcrawlhq_server/internal/altcrawlhq_server/db"
 	"github.com/saveweb/altcrawlhq_server/internal/altcrawlhq_server/tracking"
 	"github.com/saveweb/altcrawlhq_server/internal/sqlc_model"
@@ -14,11 +13,6 @@ import (
 
 func DeleteHandler(c *gin.Context) {
 	project := c.Param("project")
-	if !clientauth.IsAuthorized(c) {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-
 	finishedPayload := gocrawlhq.DeletePayload{}
 	err := c.BindJSON(&finishedPayload)
 	if err != nil {

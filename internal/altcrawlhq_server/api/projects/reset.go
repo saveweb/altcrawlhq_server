@@ -5,17 +5,12 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/saveweb/altcrawlhq_server/internal/altcrawlhq_server/clientauth"
 	"github.com/saveweb/altcrawlhq_server/internal/altcrawlhq_server/db"
 	"github.com/saveweb/altcrawlhq_server/internal/sqlc_model"
 )
 
 func ResetHandler(c *gin.Context) {
-	if !clientauth.IsAuthorized(c) {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-	ID := c.Param("id")
+	ID := c.Param("ID")
 	project := c.Param("project")
 	if ID == "" || project == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "ID and Project are required"})
