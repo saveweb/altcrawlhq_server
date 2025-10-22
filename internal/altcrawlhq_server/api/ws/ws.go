@@ -146,11 +146,11 @@ func handleIdentifyMessage(ws *websocket.Conn, wsMsg []byte) error {
 	fmt.Printf("Identify Message: %+v\n", identifyMessage)
 
 	if err := ws.WriteJSON(struct {
-		Type  string `json:"type"`
-		Reply string `json:"reply"`
+		Type    string                    `json:"type"`
+		Payload gocrawlhq.IdentifyMessage `json:"payload"`
 	}{
-		Type:  "identify",
-		Reply: "Echo...",
+		Type:    "confirmed",
+		Payload: identifyMessage.Payload,
 	}); err != nil {
 		return fmt.Errorf("failed to write JSON reply: %w", err)
 	}
