@@ -8,7 +8,7 @@ require (
 	github.com/gin-gonic/gin v1.10.1
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
-	github.com/internetarchive/gocrawlhq v1.2.33
+	github.com/internetarchive/gocrawlhq v1.2.36
 	github.com/jellydator/ttlcache/v3 v3.4.0
 	github.com/ncruces/go-sqlite3 v0.27.1
 )
